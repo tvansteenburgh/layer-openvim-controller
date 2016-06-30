@@ -17,3 +17,6 @@ requires:
     interface: mysql
   compute:
     interface: openvim-compute
+provides:
+  openvim-controller:
+    interface: http

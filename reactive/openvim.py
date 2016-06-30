@@ -14,7 +14,6 @@ from charmhelpers.core.host import (
     mkdir,
     chownr,
     service_start,
-    service_running
 )
 from charmhelpers.contrib.unison import (
     create_private_key,
@@ -22,15 +21,19 @@ from charmhelpers.contrib.unison import (
     ensure_user,
 )
 
+
 def sh(cmd):
     return subprocess.check_output(cmd, shell=True)
+
 
 def sh_as_openvim(cmd):
     return sh('sudo -iu openvim ' + cmd)
 
+
 def create_openvim_user():
     status_set("maintenance", "creating openvim user")
     ensure_user('openvim')
+
 
 def initialize_openvim_database(db):
     status_set("maintenance", "initializing openvim database")
@@ -40,6 +43,7 @@ def initialize_openvim_database(db):
         db.database(),
         db.host()
     ))
+
 
 def generate_ssh_key():
     status_set("maintenance", "generating ssh key")
@@ -51,10 +55,14 @@ def generate_ssh_key():
     create_private_key(user, private_path)
     create_public_key(user, private_path, public_path)
 
+
 def add_openvim_to_path():
     status_set("maintenance", "adding openvim to path")
-    symlink('/opt/openmano/scripts/service-openmano.sh', '/usr/bin/service-openmano')
+    symlink(
+        '/opt/openmano/scripts/service-openmano.sh',
+        '/usr/bin/service-openmano')
     symlink('/opt/openmano/openvim/openvim', '/usr/bin/openvim')
+
 
 def download_openvim():
     status_set("maintenance", "downloading openvim")
@@ -62,6 +70,7 @@ def download_openvim():
         rmtree("/opt/openmano")
     gitrepo.clone_from('https://github.com/wwwtyro/openmano.git', '/opt/openmano')
     chownr('/opt/openmano', owner='openvim', group='openvim', follow_links=False, chowntopdir=True)
+
 
 def configure_openvim(db):
     status_set("maintenance", "configuring openvim")
@@ -73,6 +82,7 @@ def configure_openvim(db):
         context={"db": db}
     )
 
+
 # TODO: possibly combine all of these create functions?
 def create_tenant():
     status_set("maintenance", "creating tenant")
@@ -82,6 +92,7 @@ def create_tenant():
     tenant_uuid = str(tenant_uuid, 'utf-8')
     return tenant_uuid
 
+
 def create_image():
     status_set("maintenance", "creating image")
     render(source="image.yaml", target="/tmp/image.yaml", owner="openvim", perms=0o664, context={})
@@ -90,6 +101,7 @@ def create_image():
     image_uuid = str(image_uuid, 'utf-8')
     return image_uuid
 
+
 def create_flavor():
     status_set("maintenance", "creating flavor")
     render(source="flavor.yaml", target="/tmp/flavor.yaml", owner="openvim", perms=0o664, context={})
@@ -97,6 +109,7 @@ def create_flavor():
     flavor_uuid = sh_as_openvim(cmd).split()[0]
     flavor_uuid = str(flavor_uuid, 'utf-8')
     return flavor_uuid
+
 
 # TODO: especially combine these stupid network functions
 def create_default_network():
@@ -107,6 +120,7 @@ def create_default_network():
     net_default_uuid = str(net_default_uuid, 'utf-8')
     return net_default_uuid
 
+
 def create_virbr_network():
     status_set("maintenance", "creating virbr0 network")
     render(source="net-virbr0.yaml", target="/tmp/net-virbr0.yaml", owner="openvim", perms=0o664, context={})
@@ -114,6 +128,7 @@ def create_virbr_network():
     net_virbr0_uuid = sh_as_openvim(cmd).split()[0]
     net_virbr0_uuid = str(net_virbr0_uuid, 'utf-8')
     return net_virbr0_uuid
+
 
 def create_vm_yaml(image_uuid, flavor_uuid, net_default_uuid, net_virbr0_uuid):
     status_set("maintenance", "creating default vm yaml file")
@@ -130,6 +145,7 @@ def create_vm_yaml(image_uuid, flavor_uuid, net_default_uuid, net_virbr0_uuid):
         }
     )
 
+
 def create_sane_defaults():
     tenant_uuid = create_tenant()
     add_openvim_tenant_env_var(tenant_uuid)
@@ -144,6 +160,7 @@ def create_sane_defaults():
         net_virbr0_uuid=net_virbr0_uuid
     )
 
+
 def install_openvim_service():
     status_set("maintenance", "installing openvim service")
     if not os.path.exists('/etc/systemd/system'):
@@ -155,6 +172,7 @@ def install_openvim_service():
         perms=0o644,
         context={}
     )
+
 
 def add_openvim_tenant_env_var(tenant_uuid):
     status_set("maintenance", "adding OPENVIM_TENANT environment variable")
@@ -170,12 +188,14 @@ def add_openvim_tenant_env_var(tenant_uuid):
             f.write(line)
         f.write(env_line)
 
+
 def openvim_running():
     try:
         sh_as_openvim('openvim tenant-list')
         return True
     except:
         return False
+
 
 def start_openvim():
     status_set("maintenance", "starting openvim")
@@ -186,9 +206,11 @@ def start_openvim():
             raise Exception('Failed to start openvim.')
         time.sleep(0.25)
 
+
 @when_not('db.available')
 def not_ready():
     status_set('blocked', 'mysql database required')
+
 
 @when('db.available')
 @when_not('openvim-controller.installed')
@@ -205,11 +227,13 @@ def install_openvim_controller(mysql):
     status_set("active", "running")
     set_state('openvim-controller.installed')
 
+
 @when('compute.connected', 'openvim-controller.installed')
 def send_ssh_key(compute):
     with open('/home/openvim/.ssh/id_rsa.pub', 'r') as f:
         key = f.read().strip()
     compute.send_ssh_key(key)
+
 
 @when('compute.available', 'openvim-controller.installed')
 def host_add(compute):
@@ -232,3 +256,8 @@ def host_add(compute):
         # TODO: openvim run function!
         sh_as_openvim('openvim host-add /tmp/compute-0.json')
         cache.set('compute:' + node['address'], True)
+
+
+@when('openvim-controller.available')
+def openvim_available(openvim):
+    openvim.configure(port=9080)
