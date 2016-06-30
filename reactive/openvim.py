@@ -7,7 +7,7 @@ from shutil import rmtree
 
 from charms.reactive import when, when_not, set_state
 from charmhelpers.core.templating import render
-from charmhelpers.core.hookenv import status_set
+from charmhelpers.core.hookenv import status_set, leader_set, leader_get
 from charmhelpers.core.unitdata import kv
 from charmhelpers.core.host import (
     symlink,
@@ -90,6 +90,7 @@ def create_tenant():
     cmd = 'openvim tenant-create /tmp/tenant.yaml'
     tenant_uuid = sh_as_openvim(cmd).split()[0]
     tenant_uuid = str(tenant_uuid, 'utf-8')
+    leader_set({'tenant': tenant_uuid})
     return tenant_uuid
 
 
@@ -260,4 +261,4 @@ def host_add(compute):
 
 @when('openvim-controller.available')
 def openvim_available(openvim):
-    openvim.configure(port=9080)
+    openvim.configure(port=9080, user=leader_get('tenant'))

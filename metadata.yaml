@@ -19,4 +19,4 @@ requires:
     interface: openvim-compute
 provides:
   openvim-controller:
-    interface: http
+    interface: openvim
