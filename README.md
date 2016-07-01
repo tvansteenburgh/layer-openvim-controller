@@ -1,6 +1,6 @@
 # Overview
 
-Launches an openvim controller.
+Launches an OpenVIM controller.
 
 # Preparation
 
@@ -31,8 +31,8 @@ change it to:
     juju deploy mysql
     juju deploy openvim-controller
     juju deploy openvim-compute
-    juju add-relation mysql openvim-controller
-    juju add-relation openvim-compute openvim-controller
+    juju relate mysql openvim-controller
+    juju relate openvim-compute openvim-controller
     
 # Creating and starting a VM
 
