@@ -68,7 +68,7 @@ def download_openvim():
     status_set("maintenance", "downloading openvim")
     if os.path.isdir("/opt/openmano"):
         rmtree("/opt/openmano")
-    gitrepo.clone_from('https://github.com/wwwtyro/openmano.git', '/opt/openmano')
+    gitrepo.clone_from('https://github.com/tvansteenburgh/openmano.git', '/opt/openmano')
     chownr('/opt/openmano', owner='openvim', group='openvim', follow_links=False, chowntopdir=True)
 
 
